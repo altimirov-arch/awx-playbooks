@@ -14,6 +14,8 @@
     - name: Check if service is running
       ansible.builtin.command: "lsof -i :{{ service_port }}"
       register: port_check
+      failed_when: false
+      change_when: false
       # BUG 1: missing "ignore_errors" — fails if port not in use
     
     - name: Stop existing service
