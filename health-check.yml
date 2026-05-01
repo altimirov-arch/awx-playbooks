@@ -1,0 +1,45 @@
+
+---
+- name: System Health Check
+  hosts: all
+  gather_facts: true
+  
+  tasks:
+    - name: Check disk usage
+      ansible.builtin.command: df -h /
+      register: disk_result
+      changed_when: false
+    
+    - name: Display disk usage
+      ansible.builtin.debug:
+        var: disk_result.stdout_lines
+    
+    - name: Check memory
+      ansible.builtin.command: vm_stat
+      register: memory_result
+      changed_when: false
+    
+    - name: Display memory
+      ansible.builtin.debug:
+        var: memory_result.stdout_lines
+    
+    - name: Check running services
+      ansible.builtin.command: launchctl list
+      register: services
+      changed_when: false
+    
+    - name: Count running services
+      ansible.builtin.debug:
+        msg: "Running services: {{ services.stdout_lines | length }}"
+    
+    - name: Check connectivity to google.com
+      ansible.builtin.uri:
+        url: https://www.google.com
+        method: GET
+        timeout: 5
+      register: connectivity
+      ignore_errors: true
+    
+    - name: Report connectivity
+      ansible.builtin.debug:
+        msg: "Internet connectivity: {{ 'OK' if connectivity.status == 200 else 'FAILED' }}"

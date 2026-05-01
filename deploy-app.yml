@@ -1,0 +1,48 @@
+---
+- name: Simulate Application Deployment
+  hosts: webservers
+  vars:
+    app_name: "my-webapp"
+    app_version: "2.1.0"
+    deploy_dir: "/tmp/awx-lab-deploy"
+  
+  tasks:
+    - name: Create deployment directory
+      ansible.builtin.file:
+        path: "{{ deploy_dir }}/{{ app_name }}"
+        state: directory
+        mode: '0755'
+    
+    - name: Generate application config
+      ansible.builtin.copy:
+        content: |
+          {
+            "app_name": "{{ app_name }}",
+            "version": "{{ app_version }}",
+            "environment": "lab",
+            "deployed_at": "{{ ansible_date_time.iso8601 }}",
+            "deployed_by": "{{ ansible_user_id }}"
+          }
+        dest: "{{ deploy_dir }}/{{ app_name }}/config.json"
+    
+    - name: Simulate downloading artifact
+      ansible.builtin.command:
+        cmd: "echo 'Downloaded {{ app_name }}-{{ app_version }}.tar.gz'"
+      register: download
+      changed_when: false
+    
+    - name: Simulate health check
+      ansible.builtin.uri:
+        url: "https://httpbin.org/status/200"
+        method: GET
+        timeout: 10
+      register: health
+      ignore_errors: true
+    
+    - name: Report deployment status
+      ansible.builtin.debug:
+        msg: >
+          Deployment complete!
+          App: {{ app_name }} v{{ app_version }}
+          Location: {{ deploy_dir }}/{{ app_name }}
+          Health: {{ 'PASSED' if health.status is defined and health.status == 200 else 'SKIPPED' }}
