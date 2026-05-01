@@ -1,0 +1,47 @@
+---
+- name: Broken Deployment (find the bugs!)
+  hosts: all
+  vars:
+    service_port: 8080
+    config_dir: "/tmp/awx-lab-broken"
+  
+  tasks:
+    - name: Create config directory
+      ansible.builtin.file:
+        path: "{{ config_dir }}"
+        state: directory
+    
+    - name: Check if service is running
+      ansible.builtin.command: "lsof -i :{{ service_port }}"
+      register: port_check
+      # BUG 1: missing "ignore_errors" — fails if port not in use
+    
+    - name: Stop existing service
+      ansible.builtin.command: "kill $(lsof -t -i :{{ service_port }})"
+      when: port_check.rc == 0
+      # BUG 2: this runs even when previous task fails (no proper error handling)
+    
+    - name: Write config file
+      ansible.builtin.copy:
+        content: |
+          port={{ servce_port }}
+          host=0.0.0.0
+        dest: "{{ config_dir }}/app.conf"
+      # BUG 3: typo in variable name "servce_port" instead of "service_port"
+    
+    - name: Start application
+      ansible.builtin.command: "/usr/local/bin/myapp --config {{ config_dir }}/app.conf"
+      # BUG 4: binary doesn't exist — will fail with "No such file"
+      register: app_start
+    
+    - name: Verify application
+      ansible.builtin.uri:
+        url: "http://localhost:{{ service_port }}/health"
+        timeout: 5
+      register: verify
+      # This will never run if previous task fails
+      # BUG 5: no retry logic — app might need time to start
+    
+    - name: Report success
+      ansible.builtin.debug:
+        msg: "Application deployed successfully on port {{ service_port }}"
