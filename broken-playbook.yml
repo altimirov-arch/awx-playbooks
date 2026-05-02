@@ -34,6 +34,7 @@
       ansible.builtin.command: "/usr/local/bin/myapp --config {{ config_dir }}/app.conf"
       # BUG 4: binary doesn't exist — will fail with "No such file"
       register: app_start
+      ignore_errors: true
     
     - name: Verify application
       ansible.builtin.uri:
