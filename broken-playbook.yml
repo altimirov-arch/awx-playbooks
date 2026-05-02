@@ -39,6 +39,7 @@
     - name: Verify application
       ansible.builtin.uri:
         url: "http://localhost:{{ service_port }}/health"
+        retries: 3
         timeout: 5
       register: verify
       # This will never run if previous task fails
