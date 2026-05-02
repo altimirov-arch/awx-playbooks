@@ -25,7 +25,7 @@
     - name: Write config file
       ansible.builtin.copy:
         content: |
-          port={{ servce_port }}
+          port={{ service_port }}
           host=0.0.0.0
         dest: "{{ config_dir }}/app.conf"
       # BUG 3: typo in variable name "servce_port" instead of "service_port"
